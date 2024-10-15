@@ -5,25 +5,17 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "cppdbg",
+            "type": "lldb",
+        //这里从cppdbg改成lldb,因为gitpod上面下载不了C/C++扩展，不支持cppdbg。以后遇到这种问题一定要看文档，查网上一般是查不到的。“type 当前调试使用哪种类型，这里是lldb(我个人习惯了gdb，但是我没有找到，也不想找了)”
             "request": "launch",
             "name": "Debug",
+        //- name 这里会显示在vscode调试窗口启动时的名字中 
             "program": "${workspaceFolder}/${defaultBuildTask}/bin/observer",
-            "args": ["-f", "${workspaceFolder}/etc/observer.ini", "-P", "cli"],
-            "cwd": "${workspaceFolder}/${defaultBuildTask}/",
-            "internalConsoleOptions": "openOnSessionStart",
-            "osx": {
-                "MIMode": "lldb",
-                "externalConsole":true
-            }
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "LLDB",
-            "program": "${workspaceFolder}/${defaultBuildTask}/bin/observer",
-            "args": ["-f", "${workspaceFolder}/etc/observer.ini", "-P", "cli"],
+        // - program 要调试的程序,对miniob来说，我们通常都是调试服务端代码，这里就是observer的路径
+            "args": ["-f", "${workspaceFolder}/etc/observer.ini", "-s", "miniob.sock"],
+        // - args 启动程序时的命令行参数，这里命令行参数要加上"-s", "miniob.sock"，否则客户端找不到miniob.sock
             "cwd": "${workspaceFolder}/${defaultBuildTask}/"
+        //-cwd` observer 运行时的工作目录，就是在observer程序中获取当前路径时，就会是这个路径。
         }
     ]
 }
