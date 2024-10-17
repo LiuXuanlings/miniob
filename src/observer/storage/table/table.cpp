@@ -127,6 +127,24 @@ RC Table::create(Db *db, int32_t table_id, const char *path, const char *name, c
   return rc;
 }
 
+RC Table::drop()
+{
+  //删除data+index+meta
+  string data_file = table_data_file(base_dir_.c_str(), table_meta_.name());
+  unlink(data_file.c_str());
+ 
+  int indexNum = table_meta_.index_num();
+  for (int i = 0; i < indexNum; i++) {
+    const IndexMeta * index_meta = table_meta_.index(i);
+    string index_file = table_index_file(base_dir_.c_str(), table_meta_.name(), index_meta->name());
+    unlink(index_file.c_str());
+  }
+ 
+  string meta_file = table_meta_file(base_dir_.c_str(), table_meta_.name());
+  unlink(meta_file.c_str());
+  return RC::SUCCESS;
+}
+
 RC Table::open(Db *db, const char *meta_file, const char *base_dir)
 {
   // 加载元数据文件

@@ -27,6 +27,7 @@ See the Mulan PSL v2 for more details. */
 
 using namespace common;
 
+//字符串形式的SQL语句->sql_node
 RC ParseStage::handle_request(SQLStageEvent *sql_event)
 {
   RC rc = RC::SUCCESS;
@@ -36,7 +37,9 @@ RC ParseStage::handle_request(SQLStageEvent *sql_event)
 
   ParsedSqlResult parsed_sql_result;
 
+  //SQL语句的parse过程，parser在yacc_sql中实现
   parse(sql.c_str(), &parsed_sql_result);
+
   if (parsed_sql_result.sql_nodes().empty()) {
     sql_result->set_return_code(RC::SUCCESS);
     sql_result->set_state_string("");
@@ -56,6 +59,7 @@ RC ParseStage::handle_request(SQLStageEvent *sql_event)
     return rc;
   }
 
+  // 在sql_event中记录parse得到的sql_node
   sql_event->set_sql_node(std::move(sql_node));
 
   return RC::SUCCESS;

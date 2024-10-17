@@ -40,10 +40,15 @@ RC ExecuteStage::handle_request(SQLStageEvent *sql_event)
 
   SessionEvent *session_event = sql_event->session_event();
 
+  //Stmt对象由Resolver阶段创建
   Stmt *stmt = sql_event->stmt();
   if (stmt != nullptr) {
+
+    //若无对应的执行计划（physical_operator），直接使用Executor执行
     CommandExecutor command_executor;
     rc = command_executor.execute(sql_event);
+
+    // 设置结果
     session_event->sql_result()->set_return_code(rc);
   } else {
     return RC::INTERNAL;

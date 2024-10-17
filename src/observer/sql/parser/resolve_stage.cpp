@@ -28,6 +28,7 @@ See the Mulan PSL v2 for more details. */
 
 using namespace common;
 
+//sql_node->stmt
 RC ResolveStage::handle_request(SQLStageEvent *sql_event)
 {
   RC            rc            = RC::SUCCESS;
@@ -35,6 +36,7 @@ RC ResolveStage::handle_request(SQLStageEvent *sql_event)
   SqlResult    *sql_result    = session_event->sql_result();
 
   Db *db = session_event->session()->get_current_db();
+
   if (nullptr == db) {
     LOG_ERROR("cannot find current db");
     rc = RC::SCHEMA_DB_NOT_EXIST;
@@ -46,6 +48,7 @@ RC ResolveStage::handle_request(SQLStageEvent *sql_event)
   ParsedSqlNode *sql_node = sql_event->sql_node().get();
   Stmt          *stmt     = nullptr;
 
+  //创建Stmt对象
   rc = Stmt::create_stmt(db, *sql_node, stmt);
   if (rc != RC::SUCCESS && rc != RC::UNIMPLEMENTED) {
     LOG_WARN("failed to create stmt. rc=%d:%s", rc, strrc(rc));
@@ -53,6 +56,7 @@ RC ResolveStage::handle_request(SQLStageEvent *sql_event)
     return rc;
   }
 
+  //在sql_event中记录resovle得到的stmt
   sql_event->set_stmt(stmt);
 
   return rc;
