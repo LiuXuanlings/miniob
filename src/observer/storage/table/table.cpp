@@ -495,9 +495,14 @@ RC Table::update_record(Record &record, const char *attr_name, Value *value)
     const FieldMeta *field = table_meta_.field(i + normal_field_start_index);
     const char      *field_name = field->name();
     if (field_name == attr_name) {
+      if(field->type() == AttrType::CHARS && field->len() < value->length()){
+        LOG_WARN("field length mismatch. table=%s, field=%s, field type=%d, value_type=%d",name(),field_name,field->len(),value->length());
+        return RC::INVALID_ARGUMENT;
+      }
       if (field->type() != value->attr_type()) {
         //暂不支持Value::cast_to()
         LOG_WARN("field type mismatch. table=%s, field=%s, field type=%d, value_type=%d",name(),field_name,field->type(),value->attr_type());
+        return RC::INVALID_ARGUMENT;
       } 
       field_offset = field->offset();
       field_length = field->len();
