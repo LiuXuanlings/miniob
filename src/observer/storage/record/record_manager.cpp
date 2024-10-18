@@ -350,6 +350,41 @@ RC RowRecordPageHandler::delete_record(const RID *rid)
   }
 }
 
+RC RecordPageHandler::update_record(Record *rec)
+{
+  ASSERT(rw_mode_ != ReadWriteMode::READ_ONLY, 
+         "cannot delete record from page while the page is readonly");
+         
+  if (rec->rid().slot_num >= page_header_->record_capacity) {
+    LOG_ERROR("Invalid slot_num %d, exceed page's record capacity, frame=%s, page_header=%s",
+              rec->rid().slot_num, frame_->to_string().c_str(), page_header_->to_string().c_str());
+    return RC::INVALID_ARGUMENT;
+  }
+
+  Bitmap bitmap(bitmap_, page_header_->record_capacity);
+  if (bitmap.get_bit(rec->rid().slot_num)) {
+    frame_->mark_dirty();
+
+    char *record_data = get_record_data(rec->rid().slot_num);
+    if (record_data == rec->data()) {
+      // nothing to do
+    } else {
+      memcpy(record_data, rec->data(), page_header_->record_real_size);
+    }
+    RC rc = log_handler_.update_record(frame_, rec->rid(), rec->data());
+    if (OB_FAIL(rc)) {
+      LOG_ERROR("Failed to update record. page_num %d:%d. rc=%s", 
+                disk_buffer_pool_->file_desc(), frame_->page_num(), strrc(rc));
+      // return rc; // ignore errors
+    }
+    return RC::SUCCESS;
+  } else {
+    LOG_DEBUG("Invalid slot_num %d, slot is empty, page_num %d.", rec->rid().slot_num, frame_->page_num());
+    return RC::RECORD_NOT_EXIST;
+  }
+  return RC::SUCCESS;
+}
+
 RC RowRecordPageHandler::update_record(const RID &rid, const char *data)
 {
   ASSERT(rw_mode_ != ReadWriteMode::READ_ONLY, "cannot delete record from page while the page is readonly");
@@ -645,6 +680,24 @@ RC RecordFileHandler::delete_record(const RID *rid)
     LOG_TRACE("add free page %d to free page list", rid->page_num);
     lock_.unlock();
   }
+  return rc;
+}
+
+RC RecordFileHandler::update_record(Record *rec)
+{
+  RC rc = RC::SUCCESS;
+
+  unique_ptr<RecordPageHandler> record_page_handler(RecordPageHandler::create(storage_format_));
+
+  rc = record_page_handler->init(*disk_buffer_pool_, *log_handler_, rec->rid().page_num, ReadWriteMode::READ_WRITE);
+  if (OB_FAIL(rc)) {
+    LOG_ERROR("Failed to init record page handler.page number=%d. rc=%s", rec->rid().page_num, strrc(rc));
+    return rc;
+  }
+
+  rc = record_page_handler->update_record(rec);
+
+  record_page_handler->cleanup();
   return rc;
 }
 

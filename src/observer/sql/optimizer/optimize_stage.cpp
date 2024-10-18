@@ -29,6 +29,7 @@ See the Mulan PSL v2 for more details. */
 using namespace std;
 using namespace common;
 
+//创建出physical_plan
 RC OptimizeStage::handle_request(SQLStageEvent *sql_event)
 {
   unique_ptr<LogicalOperator> logical_operator;

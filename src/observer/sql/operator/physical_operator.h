@@ -49,6 +49,7 @@ enum class PhysicalOperatorType
   CALC,
   STRING_LIST,
   DELETE,
+  UPDATE,
   INSERT,
   SCALAR_GROUP_BY,
   HASH_GROUP_BY,

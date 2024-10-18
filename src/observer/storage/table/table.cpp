@@ -481,6 +481,47 @@ RC Table::delete_record(const RID &rid)
   return delete_record(record);
 }
 
+RC Table::update_record(Record &record, const char *attr_name, Value *value)
+{
+  RC rc = RC::SUCCESS;
+
+  const int normal_field_start_index = table_meta_.sys_field_num();
+  const int normal_field_num = table_meta_.field_num() - normal_field_start_index;
+  //遍历表格的全部域，找到目标域，并获取目标域的offset和length
+  int field_offset = -1;
+  int field_length = -1;
+
+  for (int i = 0; i < normal_field_num && OB_SUCC(rc); i++) {
+    const FieldMeta *field = table_meta_.field(i + normal_field_start_index);
+    const char      *field_name = field->name();
+    if (field_name == attr_name) {
+      if (field->type() != value->attr_type()) {
+        //暂不支持Value::cast_to()
+        LOG_WARN("field type mismatch. table=%s, field=%s, field type=%d, value_type=%d",name(),field_name,field->type(),value->attr_type());
+      } 
+      field_offset = field->offset();
+      field_length = field->len();
+    }
+  }
+  
+  if(field_length < 0 || field_offset < 0){
+    LOG_WARN("field not find ,field name = %s",attr_name);
+      return RC::SCHEMA_FIELD_NOT_EXIST;
+  }
+
+  char *old_data = record.data();//old_data指向的是frame中的内存
+  memcpy(old_data + field_offset, value->data(), field_length);
+  
+
+  record_handler_->update_record(&record);
+  if (rc != RC::SUCCESS) {
+    LOG_ERROR("Failed to update record.rid=%s, table=%s, rc=%s", record.rid().to_string().c_str(), name(), strrc(rc));
+    return rc;
+  }
+
+  return RC::SUCCESS;
+}
+
 RC Table::delete_record(const Record &record)
 {
   RC rc = RC::SUCCESS;
