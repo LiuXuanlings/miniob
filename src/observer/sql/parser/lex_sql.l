@@ -110,6 +110,7 @@ ROLLBACK                                RETURN_TOKEN(TRX_ROLLBACK);
 INT                                     RETURN_TOKEN(INT_T);
 CHAR                                    RETURN_TOKEN(STRING_T);
 FLOAT                                   RETURN_TOKEN(FLOAT_T);
+DATE                                    RETURN_TOKEN(DATE_T);
 LOAD                                    RETURN_TOKEN(LOAD);
 DATA                                    RETURN_TOKEN(DATA);
 INFILE                                  RETURN_TOKEN(INFILE);
@@ -135,7 +136,8 @@ FORMAT                                  RETURN_TOKEN(FORMAT);
 "-" |
 "*" |
 "/"                                     { return yytext[0]; }
-\"[^"]*\"                               yylval->string = strdup(yytext); RETURN_TOKEN(SSS);
+{QUOTE}[0-9]{4}\-([0-9]|[0-9]{2})\-([0-9]|[0-9]{2}){QUOTE}            yylval->string = strdup(yytext); RETURN_TOKEN(DATE_STR);//放在普通字符串前面，记得要加单双引号啊,且月份和日期都可以一个数字
+\"[^"]*\"                               yylval->string = strdup(yytext); RETURN_TOKEN(SSS);////双引号括起来的字符串
 '[^']*\'                                yylval->string = strdup(yytext); RETURN_TOKEN(SSS);
 
 .                                       LOG_DEBUG("Unknown character [%c]",yytext[0]); return yytext[0];
