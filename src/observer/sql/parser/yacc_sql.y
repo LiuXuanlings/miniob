@@ -133,6 +133,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   char *                                     string;
   int                                        number;
   float                                      floats;
+  Row *                                      row;
+  std::vector<Row> *                         rows;
 }
 
 %token <number> NUMBER
@@ -183,6 +185,9 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <sql_node>            command_wrapper
 // commands should be a list but I use a single command instead
 %type <sql_node>            commands
+%type <row>                 row
+%type <rows>                rows
+
 
 %left '+' '-'
 %left '*' '/'
@@ -367,21 +372,46 @@ type:
     | DATE_T   { $$ = static_cast<int>(AttrType::DATES); }
     ;
 insert_stmt:        /*insert   语句的语法解析树*/
-    INSERT INTO ID VALUES LBRACE value value_list RBRACE 
+    INSERT INTO ID VALUES row rows 
     {
       $$ = new ParsedSqlNode(SCF_INSERT);
       $$->insertion.relation_name = $3;
-      if ($7 != nullptr) {
-        $$->insertion.values.swap(*$7);
-        delete $7;
+      if ($6 != nullptr) {
+        $$->insertion.rows.swap(*$6);
+        delete $6;
       }
-      $$->insertion.values.emplace_back(*$6);
-      std::reverse($$->insertion.values.begin(), $$->insertion.values.end());
-      delete $6;
+      $$->insertion.rows.emplace_back(*$5);
+      std::reverse($$->insertion.rows.begin(), $$->insertion.rows.end());
+      delete $5;
       free($3);
     }
     ;
-
+rows:
+    /* empty */
+    {
+      $$ = nullptr;
+    }
+    | COMMA row rows  { 
+      if ($3 != nullptr) {
+        $$ = $3;
+      } else {
+        $$ = new std::vector<Row>;
+      }
+      $$->emplace_back(*$2);
+      delete $2;
+    }
+    ;
+row:
+    LBRACE value value_list RBRACE {
+      if ($3 != nullptr) {
+        $$ = $3;
+      } else {
+        $$ = new Row;
+      }
+      $$->emplace_back(*$2);
+      std::reverse($$->begin(), $$->end());
+      delete $2;
+    }
 value_list:
     /* empty */
     {

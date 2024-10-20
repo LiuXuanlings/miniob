@@ -134,8 +134,10 @@ union YYSTYPE
   char *                                     string;
   int                                        number;
   float                                      floats;
+  Row *                                      row;
+  std::vector<Row> *                         rows;
 
-#line 139 "yacc_sql.hpp"
+#line 141 "yacc_sql.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

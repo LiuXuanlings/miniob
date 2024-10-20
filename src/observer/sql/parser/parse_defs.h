@@ -20,6 +20,8 @@ See the Mulan PSL v2 for more details. */
 
 #include "common/value.h"
 
+
+typedef std::vector<Value> Row;
 class Expression;
 
 /**
@@ -112,6 +114,7 @@ struct InsertSqlNode
 {
   std::string        relation_name;  ///< Relation to insert into
   std::vector<Value> values;         ///< 要插入的值
+  std::vector<Row> rows;             ///< 要插入的值的列表
 };
 
 /**
