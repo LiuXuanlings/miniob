@@ -24,13 +24,13 @@ See the Mulan PSL v2 for more details. */
 class BplusTreeIndex : public Index
 {
 public:
-  BplusTreeIndex() = default;
+  BplusTreeIndex(bool unique = false) : unique_(unique) {}
   virtual ~BplusTreeIndex() noexcept;
 
   RC create(Table *table, const char *file_name, const IndexMeta &index_meta, const FieldMeta &field_meta);
   RC open(Table *table, const char *file_name, const IndexMeta &index_meta, const FieldMeta &field_meta);
   RC close();
-
+  RC find(IndexScanner *scanner , const char* key);
   RC insert_entry(const char *record, const RID *rid) override;
   RC delete_entry(const char *record, const RID *rid) override;
 
@@ -46,6 +46,7 @@ private:
   bool             inited_ = false;
   Table           *table_  = nullptr;
   BplusTreeHandler index_handler_;
+  bool unique_;
 };
 
 /**

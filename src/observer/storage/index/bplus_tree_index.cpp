@@ -82,7 +82,30 @@ RC BplusTreeIndex::close()
 
 RC BplusTreeIndex::insert_entry(const char *record, const RID *rid)
 {
+   if(unique_){
+    RC rc=find(create_scanner(nullptr,0,false,nullptr,0,false),record + field_meta_.offset());
+    if(rc==RC::SUCCESS){
+      return RC::RECORD_DUPLICATE_KEY;
+    }
+  }
   return index_handler_.insert_entry(record + field_meta_.offset(), rid);
+}
+
+RC BplusTreeIndex::find(IndexScanner *scanner , const char* key)
+{
+  if (!scanner||!table_){
+    return RC::INTERNAL;
+  }
+  RC rc;
+  RID rid;
+  Record record;
+  while((rc=scanner->next_entry(&rid))!=RC::RECORD_EOF){
+    table_->get_record(rid,record);
+    if(common::compare_string((void *)(record.data() + field_meta_.offset()) ,field_meta_.len(), (void *)key,field_meta_.len())==0){
+      return RC::SUCCESS;
+    }
+  }
+  return RC::RECORD_EOF;
 }
 
 RC BplusTreeIndex::delete_entry(const char *record, const RID *rid)

@@ -102,12 +102,13 @@ extern int yydebug;
     LE = 303,                      /* LE  */
     GE = 304,                      /* GE  */
     NE = 305,                      /* NE  */
-    NUMBER = 306,                  /* NUMBER  */
-    FLOAT = 307,                   /* FLOAT  */
-    ID = 308,                      /* ID  */
-    SSS = 309,                     /* SSS  */
-    DATE_STR = 310,                /* DATE_STR  */
-    UMINUS = 311                   /* UMINUS  */
+    UNIQUE = 306,                  /* UNIQUE  */
+    NUMBER = 307,                  /* NUMBER  */
+    FLOAT = 308,                   /* FLOAT  */
+    ID = 309,                      /* ID  */
+    SSS = 310,                     /* SSS  */
+    DATE_STR = 311,                /* DATE_STR  */
+    UMINUS = 312                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -116,7 +117,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 119 "yacc_sql.y"
+#line 120 "yacc_sql.y"
 
   ParsedSqlNode *                            sql_node;
   ConditionSqlNode *                         condition;
@@ -137,7 +138,7 @@ union YYSTYPE
   Row *                                      row;
   std::vector<Row> *                         rows;
 
-#line 141 "yacc_sql.hpp"
+#line 142 "yacc_sql.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

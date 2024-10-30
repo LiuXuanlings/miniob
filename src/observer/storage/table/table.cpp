@@ -185,7 +185,7 @@ RC Table::open(Db *db, const char *meta_file, const char *base_dir)
       return RC::INTERNAL;
     }
 
-    BplusTreeIndex *index      = new BplusTreeIndex();
+    BplusTreeIndex *index      = new BplusTreeIndex(index_meta->unique());
     string          index_file = table_index_file(base_dir, name(), index_meta->name());
 
     rc = index->open(this, index_file.c_str(), *index_meta, *field_meta);
@@ -214,15 +214,24 @@ RC Table::insert_record(Record &record)
 
   rc = insert_entry_of_indexes(record.data(), record.rid());
   if (rc != RC::SUCCESS) {  // 可能出现了键值重复
-    RC rc2 = delete_entry_of_indexes(record.data(), record.rid(), false /*error_on_not_exists*/);
-    if (rc2 != RC::SUCCESS) {
-      LOG_ERROR("Failed to rollback index data when insert index entries failed. table name=%s, rc=%d:%s",
-                name(), rc2, strrc(rc2));
-    }
-    rc2 = record_handler_->delete_record(&record.rid());
-    if (rc2 != RC::SUCCESS) {
-      LOG_PANIC("Failed to rollback record data when insert index entries failed. table name=%s, rc=%d:%s",
-                name(), rc2, strrc(rc2));
+   if (rc == RC::RECORD_DUPLICATE_KEY) {
+      RC rc2 = record_handler_->delete_record(&record.rid());
+      if (rc2 != RC::SUCCESS) {
+        LOG_PANIC("Failed to rollback record data when insert index entries failed. table name=%s, rc=%d:%s",
+                  name(), rc2, strrc(rc2));
+      }
+      return rc;
+    } else {
+      RC rc2 = delete_entry_of_indexes(record.data(), record.rid(), false /*error_on_not_exists*/);
+      if (rc2 != RC::SUCCESS) {
+        LOG_ERROR("Failed to rollback index data when insert index entries failed. table name=%s, rc=%d:%s",
+                  name(), rc2, strrc(rc2));
+      }
+      rc2 = record_handler_->delete_record(&record.rid());
+      if (rc2 != RC::SUCCESS) {
+        LOG_PANIC("Failed to rollback record data when insert index entries failed. table name=%s, rc=%d:%s",
+                  name(), rc2, strrc(rc2));
+      }
     }
   }
   return rc;
@@ -371,7 +380,7 @@ RC Table::get_chunk_scanner(ChunkFileScanner &scanner, Trx *trx, ReadWriteMode m
   return rc;
 }
 
-RC Table::create_index(Trx *trx, const FieldMeta *field_meta, const char *index_name)
+RC Table::create_index(Trx *trx, const FieldMeta *field_meta, const char *index_name,bool unique)
 {
   if (common::is_blank(index_name) || nullptr == field_meta) {
     LOG_INFO("Invalid input arguments, table name is %s, index_name is blank or attribute_name is blank", name());
@@ -380,7 +389,7 @@ RC Table::create_index(Trx *trx, const FieldMeta *field_meta, const char *index_
 
   IndexMeta new_index_meta;
 
-  RC rc = new_index_meta.init(index_name, *field_meta);
+  RC rc = new_index_meta.init(index_name, *field_meta,unique);
   if (rc != RC::SUCCESS) {
     LOG_INFO("Failed to init IndexMeta in table:%s, index_name:%s, field_name:%s", 
              name(), index_name, field_meta->name());
@@ -388,7 +397,7 @@ RC Table::create_index(Trx *trx, const FieldMeta *field_meta, const char *index_
   }
 
   // 创建索引相关数据
-  BplusTreeIndex *index      = new BplusTreeIndex();
+  BplusTreeIndex *index = new BplusTreeIndex(unique);
   string          index_file = table_index_file(base_dir_.c_str(), name(), index_name);
 
   rc = index->create(this, index_file.c_str(), new_index_meta, *field_meta);
