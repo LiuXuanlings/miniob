@@ -44,7 +44,7 @@ RC InsertPhysicalOperator::open(Trx *trx)
       for(Record* tmp: records){
         trx->delete_record(table_,*tmp);
       }
-      break;
+      return rc;
     }
   }
   return RC::SUCCESS;
