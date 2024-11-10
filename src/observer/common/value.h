@@ -35,6 +35,7 @@ public:
   friend class BooleanType;
   friend class CharType;
   friend class DateType;
+  friend class LongType;
 
   Value() = default;
 
@@ -47,6 +48,7 @@ public:
   explicit Value(int val,bool isDate);
   explicit Value(bool val);
   explicit Value(const char *s, int len = 0);
+  explicit Value(int64_t val);
 
   Value(const Value &other);
   Value(Value &&other);
@@ -109,12 +111,14 @@ public:
   int    get_int() const;
   float  get_float() const;
   string get_string() const;
+  int64_t get_long() const;
   bool   get_boolean() const;
 
 private:
   void set_int(int val);
   void set_float(float val);
   void set_date(int val);
+  void set_long(int64_t val);
   void set_string(const char *s, int len = 0);
   void set_string_from_other(const Value &other);
 
@@ -128,6 +132,7 @@ private:
     float   float_value_;
     bool    bool_value_;
     char   *pointer_value_;
+    int64_t long_value_;
   } value_ = {.int_value_ = 0};
 
   /// 是否申请并占有内存, 目前对于 CHARS 类型 own_data_ 为true, 其余类型 own_data_ 为false

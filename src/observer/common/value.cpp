@@ -26,6 +26,8 @@ Value::Value(float val) { set_float(val); }
 
 Value::Value(int val, bool isDate) { set_date(val); }
 
+Value::Value(int64_t val){ set_long(val); }
+
 Value::Value(bool val) { set_boolean(val); }
 
 Value::Value(const char *s, int len /*= 0*/) { set_string(s, len); }
@@ -127,6 +129,10 @@ void Value::set_data(char *data, int length)
       value_.int_value_ = *(int *)data;
       length_ = length;
     } break;
+    case AttrType::LONGS: {
+      value_.long_value_ = *(int64_t *)data;
+      length_ = length;
+    } break;
     case AttrType::BOOLEANS: {
       value_.bool_value_ = *(int *)data != 0;
       length_            = length;
@@ -157,6 +163,12 @@ void Value::set_date(int val)
   attr_type_ = AttrType::DATES;
   value_.int_value_ = val;
   length_ = sizeof(val);
+}
+void Value::set_long(int64_t val)
+{
+  attr_type_ = AttrType::LONGS;
+  value_.long_value_ = val;
+  length_ = sizeof(int64_t);
 }
 void Value::set_boolean(bool val)
 {
@@ -196,8 +208,11 @@ void Value::set_value(const Value &value)
     case AttrType::FLOATS: {
       set_float(value.get_float());
     } break;
-     case AttrType::DATES: {
+    case AttrType::DATES: {
       set_date(value.get_int());
+    } break;
+    case AttrType::LONGS: {
+      set_long(value.get_int());
     } break;
     case AttrType::CHARS: {
       set_string(value.get_string().c_str());
@@ -307,6 +322,8 @@ float Value::get_float() const
 }
 
 string Value::get_string() const { return this->to_string(); }
+
+int64_t Value::get_long() const { return value_.long_value_; }
 
 bool Value::get_boolean() const
 {

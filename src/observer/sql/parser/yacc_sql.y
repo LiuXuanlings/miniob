@@ -92,6 +92,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         STRING_T
         FLOAT_T
         DATE_T
+        TEXT_T
         HELP
         EXIT
         DOT //QUOTE
@@ -366,6 +367,14 @@ attr_def:
       $$->type = (AttrType)$2;
       $$->name = $1;
       $$->length = $4;
+      free($1);
+    }
+    | ID TEXT_T
+    {
+      $$ = new AttrInfoSqlNode;
+      $$->type = AttrType::CHARS;
+      $$->name = $1;
+      $$->length = 4096;
       free($1);
     }
     | ID type
