@@ -25,6 +25,7 @@ class FieldMeta;
 class FilterStmt;
 class Db;
 class Table;
+class JoinStmt;
 
 /**
  * @brief 表示select语句
@@ -44,6 +45,7 @@ public:
 public:
   const std::vector<Table *> &tables() const { return tables_; }
   FilterStmt                 *filter_stmt() const { return filter_stmt_; }
+  std::vector<JoinStmt*>      &join_stmts() { return join_stmts_; }
 
   std::vector<std::unique_ptr<Expression>> &query_expressions() { return query_expressions_; }
   std::vector<std::unique_ptr<Expression>> &group_by() { return group_by_; }
@@ -52,5 +54,6 @@ private:
   std::vector<std::unique_ptr<Expression>> query_expressions_;
   std::vector<Table *>                     tables_;
   FilterStmt                              *filter_stmt_ = nullptr;
+  std::vector<JoinStmt*>                   join_stmts_;
   std::vector<std::unique_ptr<Expression>> group_by_;
 };

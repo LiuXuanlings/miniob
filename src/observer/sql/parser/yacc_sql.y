@@ -116,6 +116,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         GE
         NE
         UNIQUE
+        INNER
+        JOIN
 
 /** union 中定义各种数据类型，真实生成的代码也是union类型，所以不能有非POD类型的数据 **/
 %union {
@@ -137,6 +139,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   float                                      floats;
   Row *                                      row;
   std::vector<Row> *                         rows;
+  JoinSqlNode *                              join_node;  
+  std::vector<JoinSqlNode>*                  join_list;
 }
 
 %token <number> NUMBER
@@ -189,6 +193,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <sql_node>            commands
 %type <row>                 row
 %type <rows>                rows
+%type <join_node>           join_node
+%type <join_list>           join_list
 
 
 %left '+' '-'
@@ -539,6 +545,56 @@ select_stmt:        /*  select 语句的语法解析树*/
         $$->selection.group_by.swap(*$6);
         delete $6;
       }
+    }
+    | SELECT expression_list FROM ID join_node join_list where
+    {
+      $$ = new ParsedSqlNode(SCF_SELECT);
+      if ($2 != nullptr) {
+        $$->selection.expressions.swap(*$2);
+        delete $2;
+      }
+
+      if ($6 != nullptr) {
+        $$->selection.joins.swap(*$6);
+        delete $6;
+      }
+      $$->selection.joins.emplace_back(*$5);
+      std::reverse($$->selection.joins.begin(), $$->selection.joins.end());
+      $$->selection.relations.push_back($4);
+
+      if ($7 != nullptr) {
+        $$->selection.conditions.swap(*$7);
+        delete $7;
+      }
+      free($4);
+    }
+    ;
+/* 参考value_list */
+ join_list:
+    /* empty */
+    {
+      $$ = nullptr;
+    }
+    | join_node join_list  { 
+      if ($2 != nullptr) {
+        $$ = $2;
+      } else {
+        $$ = new std::vector<JoinSqlNode>;
+      }
+      $$->emplace_back(*$1);
+      delete $1;
+    }
+    ;
+join_node:
+    INNER JOIN ID ON condition_list
+    {
+      $$ = new JoinSqlNode;
+      if ($5 != nullptr) {
+        $$->conditions.swap(*$5);
+      }
+      $$->relation = $3;
+      free($3);
+      delete $5;
     }
     ;
 calc_stmt:

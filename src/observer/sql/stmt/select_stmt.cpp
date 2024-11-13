@@ -16,6 +16,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/string.h"
 #include "common/log/log.h"
 #include "sql/stmt/filter_stmt.h"
+#include "sql/stmt/join_stmt.h"
 #include "storage/db/db.h"
 #include "storage/table/table.h"
 #include "sql/parser/expression_binder.h"
@@ -61,6 +62,25 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
     table_map.insert({table_name, table});
   }
 
+  // collect tables in `join` statement
+for (size_t i = 0; i < select_sql.joins.size(); i++) {
+    const char *table_name = select_sql.joins[i].relation.c_str();
+    LOG_WARN("Relation name is %s", table_name);
+    if (nullptr == table_name) {
+      LOG_WARN("invalid argument. relation name is null. index=%d", i);
+      return RC::INVALID_ARGUMENT;
+    }
+    Table *table = db->find_table(table_name);
+    if (nullptr == table) {
+      LOG_WARN("no such table. db=%s, table_name=%s", db->name(), table_name);
+      return RC::SCHEMA_TABLE_NOT_EXIST;
+    }
+    
+    binder_context.add_table(table);
+    tables.push_back(table);
+    table_map.insert(std::pair<std::string, Table *>(table_name, table));
+  }
+
   // collect query fields in `select` statement
   vector<unique_ptr<Expression>> bound_expressions;
   ExpressionBinder expression_binder(binder_context);
@@ -100,12 +120,29 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
     return rc;
   }
 
+  // create join statement 
+  std::vector<JoinStmt*> join_stmts;
+  for (size_t i = 0; i < select_sql.joins.size(); i++) {
+    JoinStmt* join_stmt = nullptr;
+    RC          rc          = JoinStmt::create(db,
+      default_table,
+      &table_map,
+      select_sql.joins[i], 
+      join_stmt);
+    if (rc != RC::SUCCESS) {
+      LOG_WARN("cannot construct join stmt");
+      return rc;
+    }
+    join_stmts.push_back(join_stmt);
+  }
+
   // everything alright
   SelectStmt *select_stmt = new SelectStmt();
 
   select_stmt->tables_.swap(tables);
   select_stmt->query_expressions_.swap(bound_expressions);
   select_stmt->filter_stmt_ = filter_stmt;
+  select_stmt->join_stmts_.swap(join_stmts);
   select_stmt->group_by_.swap(group_by_expressions);
   stmt                      = select_stmt;
   return RC::SUCCESS;

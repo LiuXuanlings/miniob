@@ -36,6 +36,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/stmt/insert_stmt.h"
 #include "sql/stmt/select_stmt.h"
 #include "sql/stmt/stmt.h"
+#include "sql/stmt/join_stmt.h"
 
 #include "sql/expr/expression_iterator.h"
 
@@ -101,17 +102,42 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
   last_oper = &table_oper;
 
   const std::vector<Table *> &tables = select_stmt->tables();
+  bool is_inner_join = select_stmt->join_stmts().size() > 0;
+  std::vector<JoinStmt*> &join_stmts = select_stmt->join_stmts();
+  int index=0;
   for (Table *table : tables) {
 
     unique_ptr<LogicalOperator> table_get_oper(new TableGetLogicalOperator(table, ReadWriteMode::READ_ONLY));
-    if (table_oper == nullptr) {
-      table_oper = std::move(table_get_oper);
-    } else {
-      JoinLogicalOperator *join_oper = new JoinLogicalOperator;
-      join_oper->add_child(std::move(table_oper));
-      join_oper->add_child(std::move(table_get_oper));
-      table_oper = unique_ptr<LogicalOperator>(join_oper);
+    if (is_inner_join) {
+      if (table_oper == nullptr) {
+        table_oper = std::move(table_get_oper);
+      } else {
+        unique_ptr<LogicalOperator> join_oper(new JoinLogicalOperator);
+        join_oper->add_child(std::move(table_oper));
+        join_oper->add_child(std::move(table_get_oper));
+        
+        unique_ptr<LogicalOperator> predicate_oper;
+        FilterStmt *filter = join_stmts[index-1]->join_condition();
+        RC rc = create_plan(filter, predicate_oper);
+        if (rc != RC::SUCCESS) {
+          LOG_WARN("failed to create predicate logical plan. rc=%s", strrc(rc));
+          return rc;
+        }
+        predicate_oper->add_child(std::move(join_oper));
+        table_oper = std::move(predicate_oper);
+      }
+    } else {  
+      if (table_oper == nullptr) {
+        table_oper = std::move(table_get_oper);
+      } else {
+        JoinLogicalOperator *join_oper = new JoinLogicalOperator;
+        join_oper->add_child(std::move(table_oper));
+        join_oper->add_child(std::move(table_get_oper));
+        table_oper = unique_ptr<LogicalOperator>(join_oper);
+      }
     }
+
+    index++;
   }
 
   unique_ptr<LogicalOperator> predicate_oper;
