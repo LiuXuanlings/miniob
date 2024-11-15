@@ -39,7 +39,7 @@ public:
   Value      *values() const { return values_; }
   int         value_amount() const { return value_amount_; }
   FilterStmt *filter_stmt() const { return filter_stmt_; }
-  FieldMeta  *field_meta() const { return field_meta_; }
+  FieldMeta  *fields() const { return fields_; }
 
   StmtType  type() const override { return StmtType::UPDATE; }
 
@@ -48,5 +48,5 @@ private:
   Value      *values_       = nullptr;  // 更新字段
   int         value_amount_ = 0;        // 更新字段数
   FilterStmt *filter_stmt_  = nullptr;  // 筛选条件
-  FieldMeta  *field_meta_   = nullptr;  // 更新域
+  FieldMeta  *fields_   = nullptr;      // 更新域
 };

@@ -34,8 +34,13 @@ RC UpdatePhysicalOperator::open(Trx *trx)
 
   // 先收集记录再删除
   // 记录的有效性由事务来保证，如果事务不保证删除的有效性，那说明此事务类型不支持并发控制，比如VacuousTrx
+  int offset = fields_->offset();
+  int len = std::min(fields_->len(), values_->length());
   for (Record &record : records_) {
-    rc = trx_->update_record(table_, record, field_meta_->name(), value_);
+	Record newRecord = record;
+	memset(newRecord.data() + offset, 0, fields_->len());
+	memcpy(newRecord.data() + offset, values_->data(), len);
+    rc = trx_->update_record(table_, record, newRecord);
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to update record: %s", strrc(rc));
       return rc;

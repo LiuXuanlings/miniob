@@ -18,8 +18,8 @@ See the Mulan PSL v2 for more details. */
 #include "storage/db/db.h"
 #include "storage/table/table.h"
 
-UpdateStmt::UpdateStmt(Table *table, Value *values, int value_amount, FilterStmt *filter_stmt, FieldMeta *field_meta)
-    : table_(table), values_(values), value_amount_(value_amount), filter_stmt_(filter_stmt), field_meta_(field_meta)
+UpdateStmt::UpdateStmt(Table *table, Value *values, int value_amount, FilterStmt *filter_stmt, FieldMeta *fields)
+    : table_(table), values_(values), value_amount_(value_amount), filter_stmt_(filter_stmt), fields_(fields)
 {}
 
 UpdateStmt::~UpdateStmt()
@@ -33,8 +33,12 @@ UpdateStmt::~UpdateStmt()
 RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
 {
   const char *table_name = update.relation_name.c_str();
-  if (nullptr == db || nullptr == table_name) {
-    LOG_WARN("invalid argument. db=%p, table_name=%p", db, table_name);
+  if (nullptr == db ) {
+    LOG_WARN("invalid argument.db is null.");
+    return RC::INVALID_ARGUMENT;
+  }
+   if (nullptr == table_name ) {
+    LOG_WARN("invalid argument.table is null.");
     return RC::INVALID_ARGUMENT;
   }
 
@@ -45,8 +49,8 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
     return RC::SCHEMA_TABLE_NOT_EXIST;
   }
 
-  FieldMeta  *field_meta = (FieldMeta *)table->table_meta().field(update.attribute_name.c_str());
-  if (nullptr == field_meta) {
+  FieldMeta  *field_ = (FieldMeta *)table->table_meta().field(update.attribute_name.c_str());
+  if (nullptr == field_) {
     LOG_WARN("no such field in table. db=%s, table=%s, field name=%s", 
              db->name(), table_name, update.attribute_name.c_str());
     return RC::SCHEMA_FIELD_NOT_EXIST;
@@ -62,6 +66,6 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
     LOG_WARN("failed to create filter statement. rc=%d:%s", rc, strrc(rc));
     return rc;
   }
-  stmt = new UpdateStmt(table, (Value *)&update.value, 1, filter_stmt, field_meta);
+  stmt = new UpdateStmt(table, (Value *)&update.value, 1, filter_stmt, field_);
   return RC::SUCCESS;
 }

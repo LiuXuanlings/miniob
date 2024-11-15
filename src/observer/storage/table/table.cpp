@@ -490,45 +490,24 @@ RC Table::delete_record(const RID &rid)
   return delete_record(record);
 }
 
-RC Table::update_record(Record &record, const char *attr_name, Value *value)
+RC Table::update_record(const Record& oldRecord, const Record& newRecord)
 {
   RC rc = RC::SUCCESS;
 
-  const int normal_field_start_index = table_meta_.sys_field_num();
-  const int normal_field_num = table_meta_.field_num() - normal_field_start_index;
-  //遍历表格的全部域，找到目标域，并获取目标域的offset和length
-  int field_offset = -1;
-  int field_length = -1;
+  for (Index* index : indexes_) {
+		rc = index->delete_entry(oldRecord.data(), &oldRecord.rid());
+		ASSERT(RC::SUCCESS == rc,
+			"failed to delete entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
+			name(), index->index_meta().name(), oldRecord.rid().to_string().c_str(), strrc(rc));
+		rc = index->insert_entry(newRecord.data(), &newRecord.rid());
+		ASSERT(RC::SUCCESS == rc,
+			"failed to insert entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
+			name(), index->index_meta().name(), newRecord.rid().to_string().c_str(), strrc(rc));
+	}
 
-  for (int i = 0; i < normal_field_num && OB_SUCC(rc); i++) {
-    const FieldMeta *field = table_meta_.field(i + normal_field_start_index);
-    if (field->name() == attr_name) {
-      if(field->type() == AttrType::CHARS && field->len() < value->length()){
-        LOG_WARN("field length mismatch. table=%s, field=%s, field type=%d, value_type=%d",name(),field->name(),field->len(),value->length());
-        return RC::INVALID_ARGUMENT;
-      }
-      if (field->type() != value->attr_type()) {
-        //暂不支持Value::cast_to()
-        LOG_WARN("field type mismatch. table=%s, field=%s, field type=%d, value_type=%d",name(),field->name(),field->type(),value->attr_type());
-        return RC::INVALID_ARGUMENT;
-      } 
-      field_offset = field->offset();
-      field_length = field->len();
-    }
-  }
-  
-  if(field_length < 0 || field_offset < 0){
-    LOG_WARN("field not find ,field name = %s",attr_name);
-      return RC::SCHEMA_FIELD_NOT_EXIST;
-  }
-
-  char *old_data = record.data();//old_data并非指向frame中的内存，而是一个仅仅是赋值而来的一个值，参见current_record_
-  memcpy(old_data + field_offset, value->data(), field_length);
-  
-
-  record_handler_->update_record(&record);
+  rc = record_handler_->update_record(newRecord.data(), newRecord.len(), &newRecord.rid());
   if (rc != RC::SUCCESS) {
-    LOG_ERROR("Failed to update record.rid=%s, table=%s, rc=%s", record.rid().to_string().c_str(), name(), strrc(rc));
+    LOG_ERROR("Failed to update record.");
     return rc;
   }
 

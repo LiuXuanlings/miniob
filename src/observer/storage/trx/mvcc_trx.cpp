@@ -186,9 +186,9 @@ RC MvccTrx::delete_record(Table *table, Record &record)
   return RC::SUCCESS;
 }
 
-RC MvccTrx::update_record(Table *table, Record &record, const char *attr_name, Value *value)
+RC MvccTrx::update_record(Table* table, Record& oldRecord, Record& newRecord)
 {
-  return table->update_record(record, attr_name, value);
+	return RC::UNIMPLEMENTED;
 }
 
 RC MvccTrx::visit_record(Table *table, Record &record, ReadWriteMode mode)

@@ -299,8 +299,8 @@ RC LogicalPlanGenerator::create_plan(UpdateStmt *update_stmt, unique_ptr<Logical
   // 拿到相关变量
   Table      *table       = update_stmt->table();
   FilterStmt *filter_stmt = update_stmt->filter_stmt();
-  FieldMeta  *field_meta  = update_stmt->field_meta();
-  Value      *value       = update_stmt->values();
+  FieldMeta  *fields  = update_stmt->fields();
+  Value      *values       = update_stmt->values();
   unique_ptr<LogicalOperator> table_get_oper(new TableGetLogicalOperator(table, ReadWriteMode::READ_WRITE));
 
   unique_ptr<LogicalOperator> predicate_oper;
@@ -309,7 +309,7 @@ RC LogicalPlanGenerator::create_plan(UpdateStmt *update_stmt, unique_ptr<Logical
     return rc;
   }
   // 创建逻辑算子
-  unique_ptr<LogicalOperator> update_oper(new UpdateLogicalOperator(table, value, field_meta));
+  unique_ptr<LogicalOperator> update_oper(new UpdateLogicalOperator(table, values, fields));
   if (predicate_oper) {
     predicate_oper->add_child(std::move(table_get_oper));
     update_oper->add_child(std::move(predicate_oper));

@@ -202,7 +202,6 @@ public:
    */
   virtual RC update_record(const RID &rid, const char *data) { return RC::UNIMPLEMENTED; }
 
-  RC update_record(Record *rec);
   /**
    * @brief 获取指定位置的记录数据
    *
@@ -381,11 +380,13 @@ public:
   RC delete_record(const RID *rid);
 
   /**
-   * @brief 从指定文件中更新指定记录
-   *
-   * @param rid 待更新记录
-   */
-  RC update_record(Record *rec);
+   * @brief 更新一条记录，仅支持定长
+	 *
+	 * @param data			记录内容
+	 * @param record_size	记录大小
+	 * @param rid			记录标识符
+	 */
+	RC update_record(const char* data, int record_size, const RID* rid);
 
   /**
    * @brief 插入一个新的记录到指定文件中，并返回该记录的标识符
