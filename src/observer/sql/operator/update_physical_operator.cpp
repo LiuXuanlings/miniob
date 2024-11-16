@@ -31,7 +31,11 @@ RC UpdatePhysicalOperator::open(Trx *trx)
   }
 
   child->close();
-
+  if (fields_->type() != values_->attr_type()) {
+        //暂不支持Value::cast_to()
+        LOG_WARN("field type mismatch. table=%s, field=%s, field type=%d, value_type=%d",table_->name(),fields_->name(),fields_->type(),values_->attr_type());
+        return RC::INVALID_ARGUMENT;
+    } 
   // 先收集记录再删除
   // 记录的有效性由事务来保证，如果事务不保证删除的有效性，那说明此事务类型不支持并发控制，比如VacuousTrx
   int offset = fields_->offset();
