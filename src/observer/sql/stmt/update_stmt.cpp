@@ -30,7 +30,7 @@ UpdateStmt::~UpdateStmt()
   }
 }
 
-RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
+RC UpdateStmt::create(Db *db, UpdateSqlNode &update, Stmt *&stmt)
 {
   const char *table_name = update.relation_name.c_str();
   if (nullptr == db ) {
@@ -60,10 +60,9 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
   table_map.insert(std::pair<std::string, Table *>(std::string(table_name), table));
   
   FilterStmt *filter_stmt = nullptr;
-  RC          rc          = FilterStmt::create(
-      db, table, &table_map, update.conditions.data(), static_cast<int>(update.conditions.size()), filter_stmt);
+  RC rc = FilterStmt::create(db, table, &table_map, update.conditions, filter_stmt);
   if (rc != RC::SUCCESS) {
-    LOG_WARN("failed to create filter statement. rc=%d:%s", rc, strrc(rc));
+    LOG_ERROR("failed to create filter statement. rc=%d:%s", rc, strrc(rc));
     return rc;
   }
   stmt = new UpdateStmt(table, (Value *)&update.value, 1, filter_stmt, field_);

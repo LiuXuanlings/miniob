@@ -18,6 +18,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/memory.h"
 #include "common/type/attr_type.h"
 #include "common/type/data_type.h"
+#include "common/type/attr_type.h"
 
 /**
  * @brief 属性的值
@@ -93,6 +94,7 @@ public:
   void set_data(const char *data, int length) { this->set_data(const_cast<char *>(data), length); }
   void set_value(const Value &value);
   void set_boolean(bool val);
+  void set_is_null(bool _is_null);
 
   string to_string() const;
 
@@ -103,6 +105,12 @@ public:
   int      length() const { return length_; }
   AttrType attr_type() const { return attr_type_; }
 
+  bool is_minus() const
+  {
+    if(attr_type_ == AttrType::INTS ) return value_.int_value_ < 0;
+    else if(attr_type_ == AttrType::FLOATS) return value_.float_value_ < 0;
+    else return false;
+  }
 public:
   /**
    * 获取对应的值
@@ -125,6 +133,7 @@ private:
 private:
   AttrType attr_type_ = AttrType::UNDEFINED;
   int      length_    = 0;
+  bool     is_null_   = false;
 
   union Val
   {

@@ -21,7 +21,7 @@ public:
 public:
   FilterStmt* join_condition() { return filter_; }
   static RC create(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables,
-      const JoinSqlNode &sql_node,  JoinStmt  *&stmt);
+      JoinSqlNode &sql_node,  JoinStmt  *&stmt);
 
 private:
   FilterStmt* filter_ = nullptr; 
