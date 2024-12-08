@@ -2344,7 +2344,7 @@ yyreduce:
   case 72: /* expression: MIN LBRACE expression RBRACE  */
 #line 650 "yacc_sql.y"
     {
-      (yyval.expression) = (AggregateType::MIN, (yyvsp[-1].expression), sql_string, &(yyloc));
+      (yyval.expression) = create_aggregate_expression(AggregateType::MIN, (yyvsp[-1].expression), sql_string, &(yyloc));
     }
 #line 2350 "yacc_sql.cpp"
     break;

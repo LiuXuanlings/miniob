@@ -648,7 +648,7 @@ expression:
     }
     | MIN LBRACE expression RBRACE
     {
-      $$ = (AggregateType::MIN, $3, sql_string, &@$);
+      $$ = create_aggregate_expression(AggregateType::MIN, $3, sql_string, &@$);
     }
     | AVG LBRACE expression RBRACE
     {
