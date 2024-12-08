@@ -121,6 +121,11 @@ ComparisonExpr::~ComparisonExpr() {}
 RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &result) const
 {
   RC  rc         = RC::SUCCESS;
+  // check null firstly. don't care comp_
+  if (left.is_null() || right.is_null()) {
+    result = false;
+    return rc;
+  }
   int cmp_result = left.compare(right);
   result         = false;
   switch (comp_) {
@@ -320,6 +325,11 @@ RC ArithmeticExpr::calc_value(const Value &left_value, const Value &right_value,
   RC rc = RC::SUCCESS;
 
   const AttrType target_type = value_type();
+  if(target_type == AttrType::NULLS || left_value.is_null() || right_value.is_null())
+  {
+    value.set_is_null(true);
+    return rc;
+  }
   value.set_type(target_type);
 
   switch (arithmetic_type_) {
