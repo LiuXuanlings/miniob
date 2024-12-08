@@ -12,6 +12,27 @@ int DateType::compare(const Value &left, const Value &right) const
   return common::compare_int((void *)&left.value_.int_value_, (void *)&right.value_.int_value_);
 }
 
+RC DateType::max(const Value &left, const Value &right, Value &result) const
+{
+  int cmp = common::compare_int((void *)&left.value_.int_value_, (void *)&right.value_.int_value_);
+  if (cmp > 0) {
+    result.set_int(left.value_.int_value_);
+  } else {
+    result.set_int(right.value_.int_value_);
+  }
+  return RC::SUCCESS;
+}
+RC DateType::min(const Value &left, const Value &right, Value &result) const
+{
+  int cmp = common::compare_int((void *)&left.value_.int_value_, (void *)&right.value_.int_value_);
+  if (cmp < 0) {
+    result.set_int(left.value_.int_value_);
+  } else {
+    result.set_int(right.value_.int_value_);
+  }
+  return RC::SUCCESS;
+}
+
 RC DateType::add(const Value &left, const Value &right, Value &result) const
 {
   return RC::UNSUPPORTED;

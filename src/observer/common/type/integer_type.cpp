@@ -28,6 +28,19 @@ int IntegerType::compare(const Value &left, const Value &right) const
   return INT32_MAX;
 }
 
+RC IntegerType::max(const Value &left, const Value &right, Value &result) const
+{
+  int cmp = common::compare_int((void *)&left.value_.int_value_, (void *)&right.value_.int_value_);
+  result.set_int(cmp > 0 ? left.value_.int_value_ : right.value_.int_value_);
+  return RC::SUCCESS;
+}
+RC IntegerType::min(const Value &left, const Value &right, Value &result) const
+{
+  int cmp = common::compare_int((void *)&left.value_.int_value_, (void *)&right.value_.int_value_);
+  result.set_int(cmp < 0 ? left.value_.int_value_ : right.value_.int_value_);
+  return RC::SUCCESS;
+}
+
 RC IntegerType::add(const Value &left, const Value &right, Value &result) const
 {
   result.set_int(left.get_int() + right.get_int());

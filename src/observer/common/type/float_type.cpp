@@ -25,6 +25,19 @@ int FloatType::compare(const Value &left, const Value &right) const
   return common::compare_float((void *)&left_val, (void *)&right_val);
 }
 
+RC FloatType::max(const Value &left, const Value &right, Value &result) const
+{
+  int cmp = common::compare_float((void *)&left.value_.float_value_, (void *)&right.value_.float_value_);
+  result.set_float(cmp > 0 ? left.value_.float_value_ : right.value_.float_value_);
+  return RC::SUCCESS;
+}
+RC FloatType::min(const Value &left, const Value &right, Value &result) const
+{
+  int cmp = common::compare_float((void *)&left.value_.float_value_, (void *)&right.value_.float_value_);
+  result.set_float(cmp < 0 ? left.value_.float_value_ : right.value_.float_value_);
+  return RC::SUCCESS;
+}
+
 RC FloatType::add(const Value &left, const Value &right, Value &result) const
 {
   result.set_float(left.get_float() + right.get_float());

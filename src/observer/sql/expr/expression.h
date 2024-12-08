@@ -408,12 +408,13 @@ private:
 class UnboundAggregateExpr : public Expression
 {
 public:
-  UnboundAggregateExpr(const char *aggregate_name, Expression *child);
+  UnboundAggregateExpr(AggregateType aggregate_type, Expression *child);
+  UnboundAggregateExpr(AggregateType aggregate_type, std::unique_ptr<Expression> child);
   virtual ~UnboundAggregateExpr() = default;
 
   ExprType type() const override { return ExprType::UNBOUND_AGGREGATION; }
 
-  const char *aggregate_name() const { return aggregate_name_.c_str(); }
+  AggregateType aggregate_type() const { return aggregate_type_; }
 
   std::unique_ptr<Expression> &child() { return child_; }
 
@@ -421,25 +422,15 @@ public:
   AttrType value_type() const override { return child_->value_type(); }
 
 private:
-  std::string                 aggregate_name_;
+  AggregateType               aggregate_type_;
   std::unique_ptr<Expression> child_;
 };
 
 class AggregateExpr : public Expression
 {
 public:
-  enum class Type
-  {
-    COUNT,
-    SUM,
-    AVG,
-    MAX,
-    MIN,
-  };
-
-public:
-  AggregateExpr(Type type, Expression *child);
-  AggregateExpr(Type type, std::unique_ptr<Expression> child);
+  AggregateExpr(AggregateType type, Expression *child);
+  AggregateExpr(AggregateType type, std::unique_ptr<Expression> child);
   virtual ~AggregateExpr() = default;
 
   bool equal(const Expression &other) const override;
@@ -453,7 +444,7 @@ public:
 
   RC get_column(Chunk &chunk, Column &column) override;
 
-  Type aggregate_type() const { return aggregate_type_; }
+  AggregateType aggregate_type() const { return aggregate_type_; }
 
   std::unique_ptr<Expression> &child() { return child_; }
 
@@ -462,9 +453,9 @@ public:
   std::unique_ptr<Aggregator> create_aggregator() const;
 
 public:
-  static RC type_from_string(const char *type_str, Type &type);
+  static RC type_from_string(const char *type_str, AggregateType &type);
 
 private:
-  Type                        aggregate_type_;
+  AggregateType                        aggregate_type_;
   std::unique_ptr<Expression> child_;
 };

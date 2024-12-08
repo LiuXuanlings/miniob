@@ -59,29 +59,151 @@ public:
 
   void reset();
 
+  // 判断并设置二元运算结果的类型：add, subtract, multiply, divide, max, min
+  // 注意：这里没有处理 NULL 的情况，NULL 的情况在每个运算中单独处理，
+  // 算数运算中 NULL 参与运算结果为 NULL，max 和 min 中一方为 NULL 结果为另一方
+  static RC set_result_type(const Value &left, const Value &right, Value &result)
+  {
+    switch (left.attr_type()) {
+      case AttrType::INTS:
+        switch (right.attr_type()) {
+          case AttrType::INTS:
+          case AttrType::BOOLEANS: result.set_type(AttrType::INTS); break;
+          case AttrType::FLOATS: result.set_type(AttrType::FLOATS); break;
+          default: return RC::INVALID_ARGUMENT;
+        }
+        break;
+      case AttrType::FLOATS:
+        switch (right.attr_type()) {
+          case AttrType::INTS:
+          case AttrType::BOOLEANS:
+          case AttrType::FLOATS: result.set_type(AttrType::FLOATS); break;
+          default: return RC::INVALID_ARGUMENT;
+        }
+        break;
+      case AttrType::CHARS:
+        switch (right.attr_type()) {
+          case AttrType::CHARS: result.set_type(AttrType::CHARS); break;
+          default: return RC::INVALID_ARGUMENT;
+        }
+        break;
+      case AttrType::BOOLEANS:
+        switch (right.attr_type()) {
+          case AttrType::INTS: result.set_type(AttrType::INTS); break;
+          case AttrType::FLOATS: result.set_type(AttrType::FLOATS); break;
+          default: return RC::INVALID_ARGUMENT;
+        }
+        break;
+      case AttrType::DATES:
+        switch (right.attr_type()) {
+          case AttrType::DATES: result.set_type(AttrType::DATES); break;
+          default: return RC::INVALID_ARGUMENT;
+        }
+        break;
+      default: return RC::INVALID_ARGUMENT;
+    }
+    return RC::SUCCESS;
+  }
+  // 与 Value 有关的运算都在这里。
+  // 需要先调用 set_result_type 设置结果类型，再调用 DataType 的运算方法
+
   static RC add(const Value &left, const Value &right, Value &result)
   {
+    if (left.is_null() || right.is_null()) {
+      result.set_is_null(true);
+      return RC::SUCCESS;
+    }
+    RC rc = set_result_type(left, right, result);
+    if (rc != RC::SUCCESS) {
+      return rc;
+    }
     return DataType::type_instance(result.attr_type())->add(left, right, result);
   }
 
   static RC subtract(const Value &left, const Value &right, Value &result)
   {
+    if (left.is_null() || right.is_null()) {
+      result.set_is_null(true);
+      return RC::SUCCESS;
+    }
+    RC rc = set_result_type(left, right, result);
+    if (rc != RC::SUCCESS) {
+      return rc;
+    }
     return DataType::type_instance(result.attr_type())->subtract(left, right, result);
   }
 
   static RC multiply(const Value &left, const Value &right, Value &result)
   {
+    if (left.is_null() || right.is_null()) {
+      result.set_is_null(true);
+      return RC::SUCCESS;
+    }
+    RC rc = set_result_type(left, right, result);
+    if (rc != RC::SUCCESS) {
+      return rc;
+    }
     return DataType::type_instance(result.attr_type())->multiply(left, right, result);
   }
 
   static RC divide(const Value &left, const Value &right, Value &result)
   {
+    if (left.is_null() || right.is_null()) {
+      result.set_is_null(true);
+      return RC::SUCCESS;
+    }
+    RC rc = set_result_type(left, right, result);
+    if (rc != RC::SUCCESS) {
+      return rc;
+    }
+    // 除法运算结果类型为 FLOATS
+    if (result.attr_type() == AttrType::INTS) {
+      result.set_type(AttrType::FLOATS);
+    }
     return DataType::type_instance(result.attr_type())->divide(left, right, result);
   }
 
   static RC negative(const Value &value, Value &result)
   {
+    if (value.is_null()) {
+      result.set_is_null(true);
+      return RC::SUCCESS;
+    }
     return DataType::type_instance(result.attr_type())->negative(value, result);
+  }
+
+  static RC max(const Value &left, const Value &right, Value &result)
+  {
+    if (left.is_null()) {
+      result = right;
+      return RC::SUCCESS;
+    }
+    if (right.is_null()) {
+      result = left;
+      return RC::SUCCESS;
+    }
+    RC rc = set_result_type(left, right, result);
+    if (rc != RC::SUCCESS) {
+      return rc;
+    }
+    return DataType::type_instance(result.attr_type())->max(left, right, result);
+  }
+
+  static RC min(const Value &left, const Value &right, Value &result)
+  {
+    if (left.is_null()) {
+      result = right;
+      return RC::SUCCESS;
+    }
+    if (right.is_null()) {
+      result = left;
+      return RC::SUCCESS;
+    }
+    RC rc = set_result_type(left, right, result);
+    if (rc != RC::SUCCESS) {
+      return rc;
+    }
+    return DataType::type_instance(result.attr_type())->min(left, right, result);
   }
 
   static RC cast_to(const Value &value, AttrType to_type, Value &result)
@@ -111,6 +233,8 @@ public:
     else if(attr_type_ == AttrType::FLOATS) return value_.float_value_ < 0;
     else return false;
   }
+
+  bool is_null() const { return is_null_; }
 public:
   /**
    * 获取对应的值
@@ -122,7 +246,7 @@ public:
   int64_t get_long() const;
   bool   get_boolean() const;
 
-private:
+  // 这里把下面的 setter 都放到了 public 里面，这样可以直接通过 Value 对象调用这些方法
   void set_int(int val);
   void set_float(float val);
   void set_date(int val);
