@@ -782,6 +782,12 @@ group_by:
     {
       $$ = nullptr;
     }
+    | GROUP BY expression_list
+    {
+      $$ = new std::vector<std::unique_ptr<Expression>>;
+      $$->swap(*$3);
+      delete $3;
+    }
     ;
 load_data_stmt:
     LOAD DATA INFILE SSS INTO TABLE ID 

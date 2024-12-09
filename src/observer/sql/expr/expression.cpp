@@ -59,6 +59,19 @@ bool ValueExpr::equal(const Expression &other) const
   return value_.compare(other_value_expr.get_value()) == 0;
 }
 
+bool UnboundFieldExpr::equal(const Expression &other) const
+{
+  if (this == &other) {
+    return true;
+  }
+  if (other.type() != ExprType::UNBOUND_FIELD) {
+    return false;
+  }
+  const auto &other_field_expr = static_cast<const UnboundFieldExpr &>(other);
+  return strcmp(table_name(), other_field_expr.table_name()) == 0 &&
+         strcmp(field_name(), other_field_expr.field_name()) == 0;
+}
+
 RC ValueExpr::get_value(const Tuple &tuple, Value &value) const
 {
   value = value_;
